@@ -199,6 +199,17 @@ union variant_data<T, Rest...>
         rest.destroy(static_cast<U*>(nullptr));
     }
 
+    void copy_construct(const T &other)
+    {
+        new (&val) T(other);
+    }
+
+    template <typename U>
+    void copy_construct(const U &other)
+    {
+        rest.copy_construct(other);
+    }
+
     T val;
     variant_data<Rest...> rest;
 };
@@ -236,6 +247,11 @@ union variant_data<T>
         }
     }
 
+    void copy_construct(const T &other)
+    {
+        new (&val) T(other);
+    }
+
     T val;
 };
 
@@ -248,7 +264,10 @@ class variant
 {
 private:
     typedef void (*DestructorT)(variant<Ts...>&);
+    typedef void (*CopyConstructorT)(variant<Ts...>&, const variant<Ts...>&);
+
     static const DestructorT destructors[sizeof...(Ts)];
+    static const CopyConstructorT constructors[sizeof...(Ts)];
 
     template <typename T>
     static void destroy(variant<Ts...> &v)
@@ -258,6 +277,14 @@ private:
             v.data.destroy(static_cast<T*>(nullptr));
             // get<T>(v).~T();
         }
+    }
+
+    template <typename T>
+    static void copy_construct(variant<Ts...> &target, const variant<Ts...> &source)
+    {
+        // call destructor of default construct of target before copy initializing it
+        destructors[0](target);
+        target.data.copy_construct(get<T>(source));
     }
 
     template <std::size_t pos, typename U, typename... Us>
@@ -300,11 +327,12 @@ public:
     : variant(static_cast<const variant&>(other))
     {}
 
-//    variant(const variant &other)
-//    : data(other.data, other.index())
-//    {
-//        _index = other.index();
-//    }
+    variant(const variant &other)
+    {
+        _index = variant_npos;
+        constructors[other.index()](*this, other);
+        _index = other.index();
+    }
 
     template <typename U>
     constexpr variant(U &&v)
@@ -353,6 +381,10 @@ private:
 template <typename... Ts>
 const typename variant<Ts...>::DestructorT variant<Ts...>::destructors[sizeof...(Ts)] =
     {variant<Ts...>::destroy<Ts>...};
+
+template <typename... Ts>
+const typename variant<Ts...>::CopyConstructorT variant<Ts...>::constructors[sizeof...(Ts)]
+    {variant<Ts...>::copy_construct<Ts>...};
 
 
 template <std::size_t pos, typename... Ts>

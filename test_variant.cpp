@@ -303,18 +303,49 @@ TEST_CASE("testing variant_alternative")
     CHECK((is_same_v<variant_alternative_t<2, double, int, unsigned>, unsigned>));
 }
 
-//TEST_CASE("testing variant copy constructor")
-//{
-//    variant<int, double> as{3.3};
-//    auto at = as;
-//    CHECK(at.index() == 1u);
-//    CHECK(get<1u>(at) == 3.3);
-//
-//    variant<TestClass, int, double> bs{TestClass(31)};
-//    auto bt = bs;
-//    CHECK(bt.index() == 0u);
-//    CHECK(get<0u>(bt).a == 31);
-//    CHECK(get<0u>(bt).constructorid == CID::LVALUE_COPY);
-//}
+struct CheckDestructorCall
+{
+    CheckDestructorCall()
+    {
+        constructor_called = true;
+    }
+
+    ~CheckDestructorCall()
+    {
+        destructor_called = true;
+    }
+
+    static bool constructor_called;
+    static bool destructor_called;
+};
+
+bool CheckDestructorCall::constructor_called = false;
+bool CheckDestructorCall::destructor_called = false;
+
+TEST_CASE("testing variant copy constructor")
+{
+    variant<int, double> as{3.3};
+    auto at = as;
+    CHECK(at.index() == 1u);
+    CHECK(get<1u>(at) == 3.3);
+
+    variant<TestClass, int, double> bs{TestClass(31)};
+    auto bt = bs;
+    CHECK(bt.index() == 0u);
+    CHECK(get<0u>(bt).a == 31);
+    CHECK(get<0u>(bt).constructorid == CID::LVALUE_COPY);
+
+    // check that destructor of default initialized value is called
+    CheckDestructorCall::constructor_called = false;
+    CheckDestructorCall::destructor_called = false;
+    variant<CheckDestructorCall, int> cs{32};
+    CHECK(!CheckDestructorCall::constructor_called);
+    CHECK(!CheckDestructorCall::destructor_called);
+    auto ct = cs;
+    CHECK(ct.index() == 1u);
+    CHECK(get<1u>(ct) == 32);
+    CHECK(CheckDestructorCall::constructor_called);
+    CHECK(CheckDestructorCall::destructor_called);
+}
 
 
