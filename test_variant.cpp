@@ -335,7 +335,7 @@ TEST_CASE("testing variant copy constructor")
     CHECK(get<0u>(bt).a == 31);
     CHECK(get<0u>(bt).constructorid == CID::LVALUE_COPY);
 
-    // check that destructor of default initialized value is called
+    // check that first variant is not default constructed
     CheckDestructorCall::constructor_called = false;
     CheckDestructorCall::destructor_called = false;
     variant<CheckDestructorCall, int> cs{32};
@@ -344,8 +344,8 @@ TEST_CASE("testing variant copy constructor")
     auto ct = cs;
     CHECK(ct.index() == 1u);
     CHECK(get<1u>(ct) == 32);
-    CHECK(CheckDestructorCall::constructor_called);
-    CHECK(CheckDestructorCall::destructor_called);
+    CHECK(!CheckDestructorCall::constructor_called);
+    CHECK(!CheckDestructorCall::destructor_called);
 }
 
 

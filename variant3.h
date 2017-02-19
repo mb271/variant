@@ -145,8 +145,14 @@ union variant_data;
 template <typename T, typename... Rest>
 union variant_data<T, Rest...>
 {
+    using DummyT = typename variant_data<Rest...>::DummyT;
+
     variant_data()
     : val{}
+    {}
+
+    variant_data(const DummyT *dummy)
+    : rest(dummy)
     {}
 
     variant_data(const T &val)
@@ -217,8 +223,14 @@ union variant_data<T, Rest...>
 template <typename T>
 union variant_data<T>
 {
+    class DummyT {};
+
     variant_data()
     : val{}
+    {}
+
+    variant_data(const DummyT*)
+    : dummy{}
     {}
 
     variant_data(const variant_data &other, std::size_t)
@@ -253,6 +265,7 @@ union variant_data<T>
     }
 
     T val;
+    DummyT dummy;
 };
 
 template <typename... Ts> class variant;
@@ -282,8 +295,6 @@ private:
     template <typename T>
     static void copy_construct(variant<Ts...> &target, const variant<Ts...> &source)
     {
-        // call destructor of default construct of target before copy initializing it
-        destructors[0](target);
         target.data.copy_construct(get<T>(source));
     }
 
@@ -328,6 +339,7 @@ public:
     {}
 
     variant(const variant &other)
+    : data(static_cast<const typename variant_data<Ts...>::DummyT*>(nullptr))
     {
         _index = variant_npos;
         constructors[other.index()](*this, other);
