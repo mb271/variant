@@ -276,11 +276,11 @@ template <typename... Ts>
 class variant
 {
 private:
-    typedef void (*DestructorT)(variant<Ts...>&);
-    typedef void (*CopyConstructorT)(variant<Ts...>&, const variant<Ts...>&);
+    using DestructorF = void (*)(variant<Ts...>&);
+    using CopyConstructorF = void (*)(variant<Ts...>&, const variant<Ts...>&);
 
-    static const DestructorT destructors[sizeof...(Ts)];
-    static const CopyConstructorT constructors[sizeof...(Ts)];
+    static const DestructorF destructors[sizeof...(Ts)];
+    static const CopyConstructorF constructors[sizeof...(Ts)];
 
     template <typename T>
     static void destroy(variant<Ts...> &v)
@@ -391,11 +391,11 @@ private:
 };
 
 template <typename... Ts>
-const typename variant<Ts...>::DestructorT variant<Ts...>::destructors[sizeof...(Ts)] =
+const typename variant<Ts...>::DestructorF variant<Ts...>::destructors[sizeof...(Ts)] =
     {variant<Ts...>::destroy<Ts>...};
 
 template <typename... Ts>
-const typename variant<Ts...>::CopyConstructorT variant<Ts...>::constructors[sizeof...(Ts)]
+const typename variant<Ts...>::CopyConstructorF variant<Ts...>::constructors[sizeof...(Ts)]
     {variant<Ts...>::copy_construct<Ts>...};
 
 

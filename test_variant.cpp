@@ -1,6 +1,6 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "variant3.h"
-#include "../doctest/doctest/doctest.h"
+#include "../doctest/doctest/doctest.h" // https://github.com/onqtam/doctest
 #include <iostream>
 
 using namespace mb;
